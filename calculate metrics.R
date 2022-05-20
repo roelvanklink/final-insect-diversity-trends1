@@ -1,0 +1,319 @@
+# this is the way I've calculated the biodiversity metrics for the one dataset I processed
+
+library(reshape2)
+library(vegan)
+#devtools::install_github('MoBiodiv/mobr@dev')
+library(mobr)
+library(betapart)
+
+#setwd("C:\\Dropbox\\Insect Biomass Trends/csvs")
+#all.selectedIns<-  readRDS("all.selectedIns.RDS")
+#plot.df <- subset(all.selectedIns, Datasource_ID == "249") # random example
+
+#plot.df <- cleaning_dataset(plot.df, method = 'richness')
+
+
+# Evar function by Arnott Aquatic ecology lab
+# http://arnottlab.blogspot.ch/2011/11/evar-function.html
+Evar<-function(x)   {
+	v<-as.numeric(ncol(x)-1)
+	for(k in 1:nrow(x)) {
+		y<-x[k,2:ncol(x)]
+		a<-as.numeric(ncol(x)-1); b<-a; d<-a
+		for(i in 1:(ncol(x)-1)) {
+			a[i]<-if(y[i]!=0) log(y[i]) else 0 }
+		S<-sum(y>0)
+		for(j in 1:(ncol(x)-1))    {
+			b[j]<-a[[j]]/S}
+		c<-sum(b)
+		for(i in 1:(ncol(x)-1)) {
+			d[i]<-if(y[i]!=0) ((a[[i]]-c)^2/S) else 0 }
+		f<-sum(d)
+		v[k]<-(1-2/pi*atan(f))   }
+	v }
+
+
+# make a matrix
+
+
+
+#randomMatrix<- dcast(plot.df, Year ~ validTaxon, value.var = "Number", sum)
+calculate_alpha_metrics<-  function (x) {
+	randomMatrix<- x
+	
+	metrics<- data.frame(
+		Year= randomMatrix[, 1],
+		abundance= rowSums (as.data.frame(randomMatrix[, -(1)])),
+		richness=     vegan::specnumber(as.data.frame(randomMatrix[, -(1)]), MARGIN = 1)
+	)
+	
+	
+	#get quantiles:
+	
+	
+	
+	if (sum( vegan::specnumber(as.data.frame(randomMatrix[, -(1)]), MARGIN = 1))!= 0){# if there are any species in the time series
+		randomMatrix2<- as.data.frame(randomMatrix[, -(1)])
+		Qs<- quantile(log10(as.matrix(randomMatrix2[randomMatrix2!= 0])), c(0.25, 0.5, 0.75)) # zeroes were removed
+		
+		
+		metrics1<- data.frame(
+			#Evar = Evar(randomMatrix[, -(1)]) ,
+			Pielou = vegan::diversity(randomMatrix2)/log(vegan::specnumber(randomMatrix2, MARGIN = 1)),
+			dominanceAbs =       apply(randomMatrix2, 1, max) ,  # abundance of most abundant species
+			dominanceRel =       apply(randomMatrix2, 1, function(x){max(x)/sum(x) }), # relative abundance of most abundant species = Berger-Parker dominance 
+			dominanceMcNaught  = apply(randomMatrix2, 1,  function(x){sum(rev(sort(x))[1:2]) / sum(x) }),  # relative abundance of 2 most abudnant species (McNaughton dominance)
+			skewness     =       apply(randomMatrix2, 1, e1071::skewness),
+			PctRare1    =       apply(randomMatrix2, 1, function(x){sum(x[x != 0] < (sum(x) * 0.01))}),  # number of species with abunandances smaller than 1 perc of n
+			PctRare5    =       apply(randomMatrix2, 1, function(x){sum(x[x != 0] < (sum(x) * 0.05)) }),  # number of species with abunandances smaller than 5 perc of n
+			PctRare10   =       apply(randomMatrix2, 1, function(x){sum(x[x != 0] < (sum(x) * 0.1)) }),  # number of species with abunandances smaller than 5 perc of n
+			PctareNS    =       apply(randomMatrix2, 1, function(x){sum(x[x != 0] < (sum(x) / length(x[x != 0] ))) }), # number of species with abunandances smaller than n/S
+			logNr1      =       apply(randomMatrix2, 1, function(x){ sum(log10(x[x != 0]) <= log10(max(randomMatrix2)) * 0.01) }), # number of species with abundances less than 1 perc of max observed abundance
+			lognr5      =       apply(randomMatrix2, 1, function(x){ sum(log10(x[x != 0]) <= log10(max(randomMatrix2)) * 0.05) }), # number of species with abundances less than 5 perc of max observed abundance
+			logNr10     =       apply(randomMatrix2, 1, function(x){ sum(log10(x[x != 0]) <= log10(max(randomMatrix2)) * 0.1 ) }), # number of species with abundances less than 10 perc of max observed abundance
+			logNr020    =       apply(randomMatrix2, 1, function(x){ sum(log10(x[x != 0]) <= log10(max(randomMatrix2)) * 0.2 ) }), # number of species with abundances less than 20 perc of max observed abundance
+			logNr2040   =       apply(randomMatrix2, 1, function(x){ sum(log10(x[x != 0]) > log10(max(randomMatrix2)) * 0.2 & log10(x[x != 0]) <= log10(max(randomMatrix2)) * 0.4  ) }),  
+			logNr4060   =       apply(randomMatrix2, 1, function(x){ sum(log10(x[x != 0]) > log10(max(randomMatrix2)) * 0.4 & log10(x[x != 0]) <= log10(max(randomMatrix2)) * 0.6  ) }),
+			logNr6080   =       apply(randomMatrix2, 1, function(x){ sum(log10(x[x != 0]) > log10(max(randomMatrix2)) * 0.6 & log10(x[x != 0]) <= log10(max(randomMatrix2)) * 0.8  ) }),
+			logNr80100  =       apply(randomMatrix2, 1, function(x){ sum(log10(x[x != 0]) > log10(max(randomMatrix2)) * 0.8 ) }), # number of species with abundances more than 80 perc of max observed abundance
+			logNr90     =       apply(randomMatrix2, 1, function(x){ sum(log10(x[x != 0]) >= log10(max(randomMatrix2)) * 0.9 ) }), # number of species with abundances more than 90 perc of max observed abundance
+			logNr95     =       apply(randomMatrix2, 1, function(x){ sum(log10(x[x != 0]) >= log10(max(randomMatrix2)) * 0.95) }), # number of species with abundances more than 95 perc of max observed abundance
+			logNr99     =       apply(randomMatrix2, 1, function(x){ sum(log10(x[x != 0]) >= log10(max(randomMatrix2)) * 0.99) }),
+			logNrQ1     =       apply(randomMatrix2, 1, function(x){ sum(log10(x[x != 0]) <= Qs[1] ) }),
+			logNrQ2	    =       apply(randomMatrix2, 1, function(x){ sum(log10(x[x != 0]) > Qs[1]  & log10(x[x != 0]) <= Qs[2]  ) }),
+			logNrQ3     =       apply(randomMatrix2, 1, function(x){ sum(log10(x[x != 0]) > Qs[2] & log10(x[x != 0]) <= Qs[3]  ) }),
+			logNrQ4     =       apply(randomMatrix2, 1, function(x){ sum(log10(x[x != 0]) > Qs[3] ) })
+			
+		)# number of species with abundances more than 99 perc of max observed abundance
+		metrics<- cbind(metrics, metrics1)
+	}
+	
+	if(ncol(randomMatrix)>2){ # calculate Hillnumber only if more than 1 species is present in time serie
+		metrics2<- data.frame(
+			Shannon = vegan::diversity(randomMatrix2, MARGIN = 1,  index='shannon'),
+			ENSPIE = vegan::diversity(randomMatrix2, MARGIN = 1,  index='invsimpson'),
+			Hill1 = vegan::renyi(as.data.frame(randomMatrix[, -(1)]), scales = 1, hill = T))
+		metrics<- cbind(metrics, metrics2)
+	}
+	
+	if (all(round( randomMatrix[, -(1)]) == randomMatrix[, -(1)]) & ncol(as.data.frame(randomMatrix[, -(1)]))>2){ # calculate only on integers
+		minN<- min(rowSums(randomMatrix[, -(1)]))
+		if(minN <10){minN<- 10}
+		
+		metrics2<- data.frame(
+			rarefiedRichness = vegan::rarefy(randomMatrix[, -(1)], minN, se = F, MARGIN = 1),
+			Singletons   =       apply(randomMatrix2, 1, function(x){sum( x  == 1 )}) ,  # number of species in lowest abundance class (singletons) 
+			PIE = mobr::calc_PIE(randomMatrix[, -(1)]) ) 
+		
+		metrics<- cbind(metrics, metrics2)
+	}
+	
+	# for datasets with only 1 species, replace shannon, PIE, pilou: 
+	if(ncol(randomMatrix)==2){
+		metrics$Shannon <- 0
+		metrics$ENSPIE <- 0
+		metrics$Pielou <- NaN
+		metrics$Hill1 <-  NA 
+		metrics$rarefiedRichness <- 1
+		metrics$PIE  <- 0
+	}
+	
+	
+	metricsLong<- reshape2::melt(metrics, id.vars = c( "Year"), 
+															 value.name = "Number",
+															 variable.name = "Unit_in_data")
+	metricsLong <- subset(metricsLong, Unit_in_data != "run")
+	
+	return(metricsLong)
+}
+
+
+# This is actually the same as below, but gives the result a different name 
+calculate_beta<- function (x) {
+	randomMatrix<- x
+	randomMatrix_binary <- ifelse(randomMatrix > 0, 1, 0)
+	
+	
+	# calculate multivariate metrics. I keep these as objects in case we later decide to pul out all pairwise distances:
+	betaBray<- as.matrix(vegan::vegdist(randomMatrix[, -(1)]))
+	betaJac<- as.matrix(vegan::vegdist(randomMatrix_binary[, -(1)], method = "jaccard"))
+	betaHorn <- as.matrix(vegan::vegdist(randomMatrix[, -(1)], method = "horn"))
+	betaCao <- as.matrix(vegan::vegdist(randomMatrix[, -(1)], method='cao'))
+	betaGains <- as.matrix(vegan::designdist(randomMatrix[, -(1)], method = "B-J", terms = "binary",  abcd = FALSE, alphagamma = FALSE, "gains"))
+	betaLosses <- as.matrix(vegan::designdist(randomMatrix[, -(1)], method = "A-J", terms = "binary",  abcd = FALSE, alphagamma = FALSE, "losses"))
+	# two steps for Jaccard components (so as calculation is done only once)
+	J_components <- betapart::beta.pair(randomMatrix_binary[, -(1)], index.family='jaccard')	# distance
+	Jbeta <- as.matrix(J_components$beta.jac)
+	Jtu <- as.matrix(J_components$beta.jtu)
+	Jne <- as.matrix(J_components$beta.jne)
+	#n <- length(unique(rare_samp$YEAR))
+	
+	
+	#Put all of this into a Dataframe with 1 value per year:
+	metrics<- data.frame(
+		Year= randomMatrix[, 1],
+		Bray= betaBray [,1],  # beta diversity of each year compared to the first year
+		BrayLast= betaBray [,ncol(betaBray)],  # beta diversity of each year compared to the last year
+		Jaccard = betaJac [,1],
+		JaccardLast = betaJac [,ncol(betaJac)],
+		Horn = betaHorn [, 1] ,
+		HornLast= betaHorn [, ncol(betaHorn)] ,
+		Cao = betaCao[,1],
+		gains = betaGains[,1],
+		losses = betaLosses[,1],
+		#JacBinary = Jbeta[,1],
+		Jturnover = Jtu[,1],
+		Jnested = Jne[,1]
+	)
+	#return(metrics)
+	
+	
+	metricsLong<- reshape2::melt(metrics, id.vars = c( "Year"), 
+															 value.name = "Number",
+															 variable.name = "Unit_in_data")
+	metricsLong <- subset(metricsLong, Unit_in_data != "run")
+	
+	
+	
+	
+	return(metricsLong)
+	
+}
+
+
+
+calculate_density<- function (x, BW = 0.3) {
+	randomMatrix<- x
+	
+	S<- specnumber(randomMatrix[, -(1)])
+	mx<- max(randomMatrix[, -(1)])
+	mn<- min(as.matrix(randomMatrix[, -(1)])[is.finite(log(as.matrix(randomMatrix[, -(1)])))]) # take min of all non-zero values
+	dif <- log10(mx) - log10(mn)
+	Year<- randomMatrix[,1 ]
+	
+	randomMatrix1<- randomMatrix[S>1 , ]  # keep only lines with more than 1 species  
+	Year<- Year[S>1  ]  # keep only lines with more than 1 species  
+	
+	
+	
+	
+	dens<-   apply(randomMatrix1[, -(1)], 1,  function(x){ density(log10(x[x != 0]) , bw = BW,  from = log10(mn), to =  log10(mx), n = 100)$y })
+	dens<- as.data.frame(t(dens))
+	colnames(dens)<- paste0("p", seq(1:100)) # percentiles
+	densAbs<-dens*S
+	
+	
+	densFitsAbs<- cbind( Year, densityMode = "absolute", correction = F,  densAbs)
+	densFitsRel<- cbind( Year, densityMode = "relative", correction = F,  dens)
+	
+	densities<- rbind(densFitsRel, densFitsAbs)
+	
+	# if the smallest non-0 number is 1, these must be true counts, and the corrected value can be calculated
+	nrs<- as.matrix(randomMatrix1[, -1])
+	if (min(nrs[nrs != 0]) == 1  )  {
+		
+		
+		d2<- 	apply(randomMatrix1[, -(1)], 1,  function(x){ density(log10(x[x != 0]), bw = BW,  from = -log10(mx), to = log10(mx) , n = 200)$y	 })
+		d2<- as.data.frame(t(d2))       
+		negd2 <- rev(d2)	 # reverse all estimates along whole line
+		
+		dsum2<- d2 + negd2  # sum these up to gett sum of all 
+		dCor<- dsum2[101:200] # cut off negative values on x
+		colnames(dCor)<- paste0("p", seq(1:100)) # percentiles
+		dCorAbs<-dCor*S
+		
+		densFitsCorRel<- cbind( Year, densityMode = "relative", correction = T,  dCor)
+		densFitsCorAbs<- cbind( Year, densityMode = "absolute", correction = T,  dCorAbs)
+		
+		densities<- rbind(densities, densFitsCorRel, densFitsCorAbs)  }
+	
+	return(densities)
+	
+}
+
+
+
+calculate_new_metrics<-  function (x) {
+	randomMatrix<- x
+	
+	
+	if (sum( vegan::specnumber(as.data.frame(randomMatrix[, -(1)]), MARGIN = 1))!= 0){# if there are any species in the time series
+		randomMatrix2<- as.data.frame(randomMatrix[, -(1)])
+		
+		metrics<- data.frame(
+			Year= randomMatrix[, 1],
+			#Evar = Evar(randomMatrix[, -(1)]) ,
+			logNr020    =       apply(randomMatrix2, 1, function(x){ sum(log10(x[x != 0]) <= log10(max(randomMatrix2)) * 0.2 ) }), # number of species with abundances less than 20 perc of max observed abundance
+			logNr2040   =       apply(randomMatrix2, 1, function(x){ sum(log10(x[x != 0]) > log10(max(randomMatrix2)) * 0.2 & log10(x[x != 0]) <= log10(max(randomMatrix2)) * 0.4  ) }),  
+			logNr4060   =       apply(randomMatrix2, 1, function(x){ sum(log10(x[x != 0]) > log10(max(randomMatrix2)) * 0.4 & log10(x[x != 0]) <= log10(max(randomMatrix2)) * 0.6  ) }),
+			logNr6080   =       apply(randomMatrix2, 1, function(x){ sum(log10(x[x != 0]) > log10(max(randomMatrix2)) * 0.6 & log10(x[x != 0]) <= log10(max(randomMatrix2)) * 0.8  ) }),
+			logNr80100  =       apply(randomMatrix2, 1, function(x){ sum(log10(x[x != 0]) > log10(max(randomMatrix2)) * 0.8 ) }) # number of species with abundances more than 80 perc of max observed abundance
+		) }
+	
+	# for datasets with only 1 species, replace shannon, PIE, pilou: 
+	
+	metricsLong<- reshape2::melt(metrics, id.vars = c( "Year"), 
+															 value.name = "Number",
+															 variable.name = "Unit_in_data")
+	metricsLong <- subset(metricsLong, Unit_in_data != "run")
+	
+	return(metricsLong)
+}
+
+
+
+#calculate _x/beta<- function (x) {
+#  randomMatrix<- x
+#randomMatrix_binary <- with(randomMatrix, ifelse(randomMatrix > 0, 1, 0))
+
+
+# calculate multivariate metrics. I keep these as objects in case we later decide to pul out all pairwise distances:
+#betaBray<- as.matrix(vegdist(randomMatrix[, -(1)]))
+#betaJac<- as.matrix(vegdist(randomMatrix_binary[, -(1)], method = "jaccard"))
+#betaHorn <- as.matrix(vegdist(randomMatrix[, -(1)], method = "horn"))
+#betaCao <- as.matrix(vegdist(randomMatrix[, -(1)], method='cao'))
+#betaGains <- as.matrix(designdist(randomMatrix[, -(1)], method = "B-J", terms = "binary",  abcd = FALSE, alphagamma = FALSE, "gains"))
+#betaLosses <- as.matrix(designdist(randomMatrix[, -(1)], method = "A-J", terms = "binary",  abcd = FALSE, alphagamma = FALSE, "losses"))
+# two steps for Jaccard components (so as calculation is done only once)
+#J_components <- beta.pair(randomMatrix_binary[, -(1)], index.family='jaccard')	# distance
+#Jbeta <- as.matrix(J_components$beta.jac)
+#Jtu <- as.matrix(J_components$beta.jtu)
+#Jne <- as.matrix(J_components$beta.jne)#
+
+
+#Put all of this into a Dataframe with 1 value per year:
+#metrics<- data.frame(
+#  Year= randomMatrix[, 1],
+#  Bray= betaBray [,1],  # beta diversity of each year compared to the first year
+#  BrayLast= betaBray [,ncol(betaBray)],  # beta diversity of each year compared to the last year
+#  Jaccard = betaJac [,1],
+#  JaccardLast = betaJac [,ncol(betaJac)],
+#  Horn = betaHorn [, 1] ,
+#  HornLast= betaHorn [, ncol(betaHorn)] ,
+#  Cao = betaCao[,1],
+#  gains = betaGains[,1],
+#  losses = betaLosses[,1],
+#expJacBinary = Jbeta[,1],
+#Jturnover = Jtu[,1],
+#Jnested = Jne[,1]
+#)
+#return(metrics)
+
+
+#betaLong<- reshape2::melt(metrics, id.vars = c( "Year"), 
+#                       value.name = "Expected",
+#                       variable.name = "Unit_in_data")
+#betaLong <- subset(betaLong, Unit_in_data != "run")#
+#
+#return(betaLong)#
+
+#}
+
+
+
+
+#randomMatrix2<-t(data.frame(x1952 = c(1,2,3,4,5), 
+# x1970 = c(2,3,4,5,6), 
+# x1980 = c(2,4,8,16,25), 
+# x1990 = c(5,10,15,20,25)))
+
