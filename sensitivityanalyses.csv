@@ -1,0 +1,22 @@
+Final20210812,nr,section,model_name,input_file,y,model_formula,Hessian,note
+,1,Sensitivity,inlaRichness50plots,completeData2021max50plotsRichness,log10(Number+1),cYear:Realm+ Realm ,,ran
+,2,Sensitivity,inlaRichness20plots,completeData2021max20plotsRichness,log10(Number+1),cYear: Realm+ Realm ,,ran
+,3,Sensitivity,inlaRichness10plots,completeData2021max10plotsRichness,log10(Number+1),cYear: Realm+ Realm ,,ran
+,4,Sensitivity,inlaAbundance50plots,completeData2021max50plotsAbundance,log10(Number+1),cYear: Realm+ Realm ,,ran
+,5,Sensitivity,inlaAbundance20plots,completeData2021max20plotsAbundance,log10(Number+1),cYear: Realm+ Realm ,,ran
+,6,Sensitivity,inlaAbundance10plots,completeData2021max10plotsAbundance,log10(Number+1),cYear: Realm+ Realm ,,ran
+,7,Sensitivity,inlaENSPIE50plots,completeData2021max50plotsENSPIE,log10(Number+1),cYear: Realm+ Realm ,,ran
+,8,Sensitivity,inlaENSPIE20plots,completeData2021max20plotsENSPIE,log10(Number+1),cYear: Realm+ Realm ,,hessian
+,9,Sensitivity,inlaENSPIE10plots,completeData2021max10plotsENSPIE,log10(Number+1),cYear: Realm+ Realm ,,ran
+,10,Sensitivity,inlaRichShort,completeData2021shortRichness,log10(Number+1),cYear: Realm+ Realm ,,ran
+,11,Sensitivity,inlaAbundShort,completeData2021shortAbundance,log10(Number+1),cYear: Realm+ Realm ,,ran
+,12,Sensitivity,inlaENSPIEShort,completeData2021shortENSPIE,log10(Number+1),cYear: Realm+ Realm ,,
+,13,Sensitivity,inlaRichLong,completeData2021longRichness,log10(Number+1),cYear: Realm+ Realm ,,ran
+,14,Sensitivity,inlaAbundLong,completeData2021longAbundance,log10(Number+1),cYear: Realm+ Realm ,,ran
+,15,Sensitivity,inlaENSPIELong,completeData2021longENSPIE,log10(Number+1),cYear: Realm+ Realm ,,ran
+,16,Sensitivity,inlaJaccardLast,cDjaccard,1-Number,cYear: Realm+ Realm ,,ran
+,17,Sensitivity,inlaJacDifLast,cDjaccard,1-dif,cYear: Realm+ Realm ,,ran
+,18,Sensitivity,inlaHornLast,cDhorn,1-Number,cYear: Realm+ Realm ,,hessian
+,19,Sensitivity,inlaHornLastDif,cDhorn,1-dif,cYear: Realm+ Realm ,,ran
+,20,Sensitivity,inlaBrayLast,cDbray,1-Number,cYear: Realm+ Realm ,,ran
+,21,Sensitivity,inlaBrayLastDif,cDbray,1-dif,cYear: Realm+ Realm ,,ran
