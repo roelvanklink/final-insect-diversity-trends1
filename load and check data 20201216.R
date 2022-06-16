@@ -6,25 +6,20 @@ rm(list=ls())
 library(reshape2)
 library(tidyverse)
 library(beepr)
-setwd("D:/work/2017 iDiv/2018 insect biomass/insect-richness-trends/R/")
+setwd(".../final-insect-diversity-trends1/")
 source("calculate metrics.R")
-source("D:/work/2017 iDiv/2018 insect biomass/insect-richness-trends/R/effort_rarefaction.R")
-source("D:/work/2017 iDiv/2018 insect biomass/insect-richness-trends/R/calculate expected beta diversity.R")
-source("D:/work/2017 iDiv/2018 insect biomass/insect-richness-trends/R/function_cleaning_taxon_names.R")
+source("effort_rarefaction.R")
+source("calculate expected beta diversity.R")
+source("function_cleaning_taxon_names.R")
 
 
 
-
-  # make alternative color schemes
-  col.scheme.cont<-c( "Europe"="green3", "Latin America"= "magenta", "North America"= "orange","Asia" = "purple3", 
-                      "Africa" = "blue", "Australia" = "red")
-  col.scheme.realm<-c(  "Freshwater"  = "dodgerblue2", "Terrestrial" = "peru")
+# object for the columns needed later
   columnsProvidedData<- c("Datasource_name" ,   "Plot_ID", "Plot_name", "Sample_ID", "Year", "Period", "Date", "Taxon", "Sex", 
                     "Unit",    "Original_number", "Transformed_number", "Number", "Error", "ExpectedBeta",  "SDexpectedBeta" )
 
 
 # load sheets of original database
-setwd("C:/Users/roelv/Dropbox/Insect Biomass Trends/csvs") # home
 setwd("C:\\Dropbox\\Insect Biomass Trends/csvs") # work # work
 
 taxa<-read.csv( file = "C:\\Dropbox\\Insect Biomass Trends/csvs/taxa5.2.csv"); dim(taxa)
@@ -37,8 +32,6 @@ database <-read.csv( file = "Data 5.2.csv"); str(database)
 database<- subset(database, Note != "remove");dim(database); is.numeric(database$Number)
 unique(database$Datasource_name)
 studies<-read.csv(file = "studies 5.2.csv", header = T); dim(studies)
-#studies1 <-read.table( file = "clipboard", header = T, sep = "\t"); dim(studies1) 
-#write.csv(studies1, file = "studies 5.2.csv", row.names = F)
 
 #Add taxonomic level to Taxon table
 taxa<- taxa[, 1:14] 
@@ -56,9 +49,8 @@ taxa<- taxa[, 1:14]
                       levels = c("Phylum",  "Class", "Subclass", "Order","Suborder",  "Family",
                                  "Subfamily","Genus" ,"Species" ))
   taxa$Rank<-as.numeric(taxa$Level)        
-write.csv(taxa, file = "C:\\Dropbox\\Insect Biomass Trends/csvs/taxa5.2.csv", row.names = F )  
-  
-  # some changes to groupings
+
+  # rename some groupings
   studies$Continent[studies$Continent == "South America"]  <- "Latin America"
   studies$Continent[studies$Continent == "Central America"]  <- "Latin America"
   studies$Region[studies$Region == "Russia Volga"]  <- "Russia Central & Volga"
@@ -76,14 +68,14 @@ write.csv(taxa, file = "C:\\Dropbox\\Insect Biomass Trends/csvs/taxa5.2.csv", ro
   
   # remove repeated column names
   names(studies) # no redundancy
-  studies<- studies[, 1:31]
   names(database) # remove redundant columns later
-  names(samples) # remove redundant comuns
+  names(samples) 
+  # only select useful columns
   samples<- samples[, c("Sample_ID", "Datasource_ID", "Datasource_nameREDUNDANT", "Data_source", "Extraction_method", "Sampling_method", "Stratum", 
-                    "Sample_area", "Ref.to.methods", "Number_of_replicates", "Aggregation_of_replicates", "Taxon_in_Data",            
-                    "OLDabundance_analysis" , "NEWabundance_analysis", "PurifiedAnalysis", "Biomass_Abundance_analysis", "taxonomic_paper", "non.insects" , 
+  											"Taxonomic_precision", "Sample_area", "Ref.to.methods", "Number_of_replicates", "Aggregation_of_replicates", "Taxon_in_Data",            
+                    "Biomass_Abundance_analysis", "taxonomic_paper", "non.insects" , 
                     "taxon_comparison", "order_comparison", "family_comparison", "Populations",
-                    "non.insect_proportion", "Original_unit", "Calculations", "Unit",  "Richness_precision", "Error_unit", "Flag_taxonomy"  )   ]
+                    "non.insect_proportion", "Original_unit", "Calculations", "Unit",  "Error_unit", "Flag_taxonomy"  )   ]
   names(plots) # remove redundant columns
   plots<- plots[, c("Plot_ID", "Datasource_ID", "Location", "Plot_name", "Details.plots",  "Experimental_Treatment", "Details_expt_trt",
                    "Process_of_change", "notes_change", "invasives", "Coord_system", "Original_Latitude", "Original_Longitude", "Latitude",
@@ -115,9 +107,6 @@ write.csv(taxa, file = "C:\\Dropbox\\Insect Biomass Trends/csvs/taxa5.2.csv", ro
   California.std<- read.csv(file = "California Resh standardized.csv")
   schuch<- read.csv( file = "Schuch data for richness.csv")
     schuch<- subset(schuch, Number >=0) # exclude sight observations
-    chek<- schuch %>% 
-    	     group_by(Plot_ID, Year) %>%
-    	     summarise(  NUMBER_OF_DATES =  length(unique(Date))    ) # good 
   LTER_NTL<- read.csv(file = "LterNTLcleanSum.csv")
   GPDD.std <- read.csv( file = "GPDD data_standardized.csv"); unique(GPDD.std$Datasource_name)
   Hungary <- read.csv (file = "Valtonen_long.csv"); #head(Hungary)
@@ -125,8 +114,6 @@ write.csv(taxa, file = "C:\\Dropbox\\Insect Biomass Trends/csvs/taxa5.2.csv", ro
   Breitenbach <- read.csv(file = "Breitenbach2020.csv")
   Finland <- read.csv (file = "Kuusamon_long.csv"); Finland$Unit <- "abundance" #head(Finland)
   Wijster <- read.csv( file = "Netherlands Ground beetles 2021.csv", header = T)
-  CC<- read.csv(file = "CCfullForRichness.csv", header = T) 
-      CCsum<- read.csv(file = "cedarcreekBEFsummed.csv", header = T)   # summed over all plots (excluding those where a year is missing)
       
   NZ<- read.csv(file = "NZ river monitoring final.csv", header = T)
     NZsel<- rbind( # need to do some selection here
@@ -200,17 +187,22 @@ table(samples$taxonomic_paper)   #!! this is not the number of datasets, just th
   # test if the data in databse are all either calculate or provided
  unique(merge(database, samples, by = "Sample_ID")$taxonomic_paper ) # good. no 'addMeans' 
 
+ #raw data
 databaseRaw<-database[database$Sample_ID %in% samplesCalc$Sample_ID  , ]; dim(databaseRaw) #12260 
   table(databaseRaw$Unit) # good: only abundance or density
 
-  
+ # provided calculated metrics 
 databaseProv<- database[database$Sample_ID %in% samplesProv$Sample_ID  , ]; dim(databaseProv) #4218
    table(databaseProv$Unit) # various metrics 
    table(databaseProv$Datasource_name,  databaseProv$Unit) # various metrics 
-   subset(databaseProv, Unit == "biomass")$Datasource_name
+   subset(databaseProv, Unit == "biomass")$Datasource_name # will not be analysed
   
+   
+   # abundance only datasets
 databaseAbundOnly<-  database[database$Sample_ID %in% samplesAbunOnly$Sample_ID  , ]; dim(databaseAbundOnly)   
-table(databaseAbundOnly$Datasource_name,  databaseAbundOnly$Unit) # 12 richness values from russia soil fauna that need to be added up after selection. same procedure as abundance data 
+table(databaseAbundOnly$Datasource_name,  databaseAbundOnly$Unit) 
+# 12 richness values from russia soil fauna that need to be added up after selection. same procedure as abundance data, 
+# but will be analysed under richness 
 
   
   
@@ -249,7 +241,7 @@ table(databaseAbundOnly$Datasource_name,  databaseAbundOnly$Unit) # 12 richness 
     unique(temp$Phylum)
 
     
-    # make pure dataset of only insects and arachnids:
+    # make pure dataset of only insects, springtails and arachnids:
    tempPure<- subset(temp, Phylum == "Arthropoda" ); dim(tempPure)
    sort(unique(tempPure$Datasource_name))
    tempPure<- subset(tempPure, Class == "Insecta" | Class == "Arachnida" | Class == "Entognatha" |  Class == ""); dim(tempPure) # empty arthropod class is combined insects and arachnids, possibly some myriapods and terrestrial crustaceans, 
@@ -264,13 +256,13 @@ table(databaseAbundOnly$Datasource_name,  databaseAbundOnly$Unit) # 12 richness 
   tempPure<- merge(tempPure, studies); dim(tempPure)
   
 subset(unique(tempPure[, c("Invertebrate_group_Scientific_name", "Taxon")]), Invertebrate_group_Scientific_name == "All_invertebrates")
-  # only insects and arachnids
+  # only insects and arachnids left
   
             
 # 2) aggregate over all taxa in abundnce data
 abundDfPure<- dcast(tempPure,  Datasource_name + Plot_ID + Plot_name +   Year + Period + 
         Date  + Invertebrate_group_Scientific_name + Unit ~ "Number", value.var = "Number", sum) ;  dim(abundDfPure); length(unique(abundDfPure$Datasource_name)) # 400 difference
-table(abundDfPure$Datasource_name, abundDfPure$Unit) # richness values in colorado can stay, but should have been in 'provided'
+table(abundDfPure$Datasource_name, abundDfPure$Unit) # richness values in russia soil fauna can stay
 
 # 3) add columns 
   names(abundDfPure)
@@ -294,12 +286,11 @@ table(abundDfPure$Datasource_name, abundDfPure$Unit) # richness values in colora
 #check for duplicates()  
 dups<-  abundDfPure[duplicated(abundDfPure[, c("Plot_ID", "Year", "Period", "Unit")]) ,]
 unique(dups$Datasource_name)
-# correct dups:   "Brazil Dungbeetles" "Israel butterflies" "Utah freshwater"   
+# datasets with correct duplicate values (abundance data with multiple measurements in 1 month:
+# "Brazil Dungbeetles" "Israel butterflies" "Utah freshwater"   
   
 
 # combine provided and processed data
-  table(databaseProv$Period) # I don;t think we can do anything about this, soince these are values taken straight from papers
-  
   databaseProv<- databaseProv[, names(databaseProv) %in% columnsProvidedData]
   databaseProv$ExpectedBeta<- NA ;   databaseProv$SDexpectedBeta <- NA
   
@@ -365,14 +356,10 @@ allProvidedDataPure<- rbind(databaseProvPure,
                             allProvidedData)
   
   
-# allProvidedData   <- rbind(databaseProv, 
-#                             abundDf1,
-#                             allProvidedData); dim(allProvidedData)
 
 
 
 length(unique(allProvidedDataPure$Datasource_name)) #117 studies
-#length(unique(allProvidedData$Datasource_name)) #121 studies
 dim(allProvidedDataPure)
     
 #fix some things
@@ -501,12 +488,7 @@ metadata_per_dataset<-  allRawData %>%
     NUMBER_OF_TAXA = length(unique(Taxon))
     )
 print(subset(metadata_per_dataset, NUMBER_OF_YEARS >19 & NUMBER_OF_TAXA > 4 & Unit == "abundance"), n= Inf)
-  
-print(subset(metadata_per_dataset, NUMBER_OF_YEARS >19 & NUMBER_OF_TAXA > 4 & Unit == "abundance"), n= Inf)
-  sel20yr<- c("England freshwater", "GPDD_502", "LTER North Temperate Lakes", "LTER sev grasshoppers", "Sweden freshwater")
-  selRawData<- allRawData[allRawData$Datasource_name %in%sel20yr, ]
-
-    
+ 
   metadata_per_plot<-  selRawData %>% 
   group_by(Datasource_name, Plot_ID, Unit) %>%
   summarise(
@@ -992,11 +974,6 @@ dim(metadata_per_plot) # 2407
 metadata_per_plot
 str(metadata_per_plot)
 
-#parse metadata for different purposes: 
-#Shyamolina:  
-min20yrFreshwaterData <- subset(metadata_per_plot, Number_of_years > 19 & Realm == "Freshwater" & Source_of_values != "Provided in publication")
-write.csv(min20yrFreshwaterData, file = "C:/Dropbox/Insect Biomass Trends/2021 related projects/Freshwater for Swiss project/20yrFreshwater_Metadata.csv", row.names = F)
-
 metadata_per_dataset<-  all.resultsPure %>% 
   group_by(Datasource_ID) %>%
   summarise(
@@ -1022,14 +999,6 @@ metadata_per_dataset<-  all.resultsPure %>%
     Realm = unique(Realm)
   #  AbundanceBiomass = unique(Abundance.Biomass),
   )
-
-sample_n(metadata_per_dataset, 10)
-
-print(metadata_per_dataset, n = Inf)
-
-metaCommunities<- subset(metadata_per_dataset, Number_of_plots  >=5 & Source_of_values  != "Provided in publication"& Source_of_values  != "Provided or summed from data in publication")
-print(arrange(metaCommunities, Source_of_values), n = Inf)
-write.csv(metaCommunities, file = "C:/Dropbox/Insect Biomass Trends/2021 related projects/Metacommunities/Insect Metacommunities Metadata Aug 2021.csv")
 
 
 
@@ -1200,7 +1169,7 @@ setdiff(unique(completeData2021pure$Plot_ID), unique(metadata_per_plot$Plot_ID))
 
 
 sample_n(metadata_per_plot, 20)
-save(metadata_per_plot, file ="metadata_per_plot richness 20212028.RData")
+save(metadata_per_plot, file ="metadata_per_plot richness 20210228.RData")
 
 
 metadata_per_dataset<-  all.resultsPure %>% 
