@@ -1,3 +1,5 @@
+#by Alban Sagouis
+
 #' A function to clean the data set
 #'
 #' The function deals with the various taxonomical levels of recorded taxa. Only
