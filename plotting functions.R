@@ -35,8 +35,7 @@ Slope$text = paste0("(", Slope$Datasources, " | ", Slope$Plots, ")")
 
 return(Slope)
 	
-	
-	
+
 }
 
 
