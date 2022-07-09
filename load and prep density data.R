@@ -19,7 +19,7 @@ database<- subset(database, Note != "remove");dim(database)
 unique(database$Datasource_name)
 studies<-read.csv(file = "studies 5.2.csv", header = T); dim(studies)
 
-load("completeData2021pure.RData")
+load("completeData2021.RData")
 completeData2021$Flag_taxonomy[is.na(completeData2021$Flag_taxonomy)  ]<- "" # homogenize lacking flags 
 
 
