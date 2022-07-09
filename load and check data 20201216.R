@@ -6,7 +6,7 @@ rm(list=ls())
 library(reshape2)
 library(tidyverse)
 library(beepr)
-setwd(".../final-insect-diversity-trends1/")
+setwd("D:/work/2017 iDiv/2018 insect biomass/final-insect-diversity-trends1/")
 source("calculate metrics.R")
 source("effort_rarefaction.R")
 source("calculate expected beta diversity.R")
@@ -22,16 +22,17 @@ source("function_cleaning_taxon_names.R")
 # load sheets of original database
 setwd("C:\\Dropbox\\Insect Biomass Trends/csvs") # work # work
 
-taxa<-read.csv( file = "C:\\Dropbox\\Insect Biomass Trends/csvs/taxa5.2.csv"); dim(taxa)
-plots<-read.csv( file = "C:\\Dropbox\\Insect Biomass Trends/csvs/PlotData 5.0.csv"); dim(plots)
-UKfwPlots<- read.csv( file = "C:\\Dropbox\\Insect Biomass Trends/csvs/UKfwSites.csv")
-plots<- rbind(plots[, names(UKfwPlots)], UKfwPlots)
-
-samples <-read.csv( file = "Sample_Info 5.2.csv"); dim(samples)
+# files available on KNB:
+taxa<-read.csv( file = "taxa5.2.csv"); dim(taxa)
+plots<-read.csv( file = "plotData 2022.csv"); dim(plots)
+samples <-read.csv( file = "SampleData.csv"); dim(samples)
 database <-read.csv( file = "Data 5.2.csv"); str(database)
 database<- subset(database, Note != "remove");dim(database); is.numeric(database$Number)
 unique(database$Datasource_name)
-studies<-read.csv(file = "studies 5.2.csv", header = T); dim(studies)
+studies<-read.csv(file = "Datasources 2022.csv", header = T); dim(studies)
+
+rawData<- read.csv(file = "rawData 2022.csv") # this file is created later in this script from a range of original files
+
 
 #Add taxonomic level to Taxon table
 taxa<- taxa[, 1:14] 
@@ -576,6 +577,7 @@ allRawData$Period[is.na(allRawData$Period)]<-1  # replace missing Period data wi
 allRawData$Period[allRawData$Period == ""]<-1  # replace missing Period data with 1
 allRawData<- allRawData[, c("Plot_ID", "Sample_ID",  "Year", "Period", "Date", "Taxon", "Withintaxon_group",  
                 "Unit_in_data",  "Original_number", "Transformed_number", "Number",  "Error")] 
+
 
 
 # merge all tables into 1 big object 
